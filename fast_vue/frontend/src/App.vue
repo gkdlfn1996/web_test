@@ -1,6 +1,17 @@
 <template>
   <div id="app">
-    <h1>{{ message }}</h1>
+    <input
+      v-model="inputText"
+      placeholder="Type here"
+      style="width: 400px; padding: 8px;"
+    />
+    <div style="margin-top: 12px;">
+      <button @click="send" style="padding: 8px 16px; margin-right:8px;">OK</button>
+      <button @click="clear" style="padding: 8px 16px;">Clear</button>
+    </div>
+    <p style="font-size: 2rem; font-weight: bold; margin-top: 24px;">
+      {{ label }}
+    </p>
   </div>
 </template>
 
@@ -9,34 +20,48 @@ import { ref, onMounted } from 'vue'
 
 export default {
   setup() {
-    const message = ref('Loading...')
-    
+    const inputText = ref('')
+    const label = ref('')
+
     onMounted(async () => {
-      console.log('▶ onMounted 실행됨')  // 여기가 출력되어야 fetch가 호출된 것
-      try {
-        const resp = await fetch('/api/message')
-        if (!resp.ok) {
-          console.error('네트워크 오류:', resp.status, resp.statusText)
-          throw new Error('네트워크 오류')
-        }
-        const data = await resp.json()
-        console.log('✅ API 응답 데이터:', data)
-        message.value = data.message
-      } catch (err) {
-        console.error('Fetch 에러:', err)
-        message.value = 'Error fetching message'
-      }
+      const res = await fetch('/api/message')
+      const data = await res.json()
+      label.value = data.message
     })
 
-    return { message }
+    async function send() {
+      const res = await fetch('/api/echo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: inputText.value })
+      })
+      const data = await res.json()
+      label.value = data.echo
+    }
+
+    function clear() {
+      inputText.value = ''
+      label.value = ''
+    }
+
+    return {
+      inputText,
+      label,
+      send,
+      clear
+    }
   }
 }
 </script>
 
 <style>
 #app {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
   font-family: Avenir, Helvetica, Arial, sans-serif;
   text-align: center;
-  margin-top: 40px;
 }
 </style>
