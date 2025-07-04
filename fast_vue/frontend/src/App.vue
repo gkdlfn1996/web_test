@@ -1,67 +1,63 @@
 <template>
   <div id="app">
-    <input
-      v-model="inputText"
-      placeholder="Type here"
-      style="width: 400px; padding: 8px;"
-    />
-    <div style="margin-top: 12px;">
-      <button @click="send" style="padding: 8px 16px; margin-right:8px;">OK</button>
-      <button @click="clear" style="padding: 8px 16px;">Clear</button>
+    <div class="input-row">
+      <input 
+        v-model="projectName" 
+        @keyup.enter="loadShots"
+        placeholder="프로젝트 이름 입력" />
+        <button @click="loadShots">OK</button>
+        <button @click="clear">Clear</button>
     </div>
-    <p style="font-size: 2rem; font-weight: bold; margin-top: 24px;">
-      {{ label }}
-    </p>
+
+    <div class="table-container">
+      <table v-if="shots.length" class="shots-table">
+        <thead>
+          <tr>
+            <th>Shot</th><th>Task</th><th>Cut In</th><th>Cut Out</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="shot in shots" :key="shot.id">
+            <td>{{ shot.code }}</td>
+            <td>{{ shot.sg_task }}</td>
+            <td>{{ shot.sg_cut_in }}</td>
+            <td>{{ shot.sg_cut_out }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
+import { fetchMessage, fetchShots } from './api'
 
 export default {
   setup() {
-    const inputText = ref('')
-    const label = ref('')
+    const projectName = ref('')
+    const shots       = ref([])
 
     onMounted(async () => {
-      const res = await fetch('/api/message')
-      const data = await res.json()
-      label.value = data.message
+      // 초기 메시지 로드 (필요 없으면 주석 처리)
+      await fetchMessage()
     })
 
-    async function send() {
-      const res = await fetch('/api/echo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: inputText.value })
-      })
-      const data = await res.json()
-      label.value = data.echo
+    async function loadShots() {
+      const data = await fetchShots(projectName.value)
+      shots.value = data.shots || []
     }
 
     function clear() {
-      inputText.value = ''
-      label.value = ''
+      projectName.value = ''
+      shots.value = []
     }
 
-    return {
-      inputText,
-      label,
-      send,
-      clear
-    }
+    return { projectName, shots, loadShots, clear }
   }
 }
 </script>
 
 <style>
-#app {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  text-align: center;
-}
+
 </style>
