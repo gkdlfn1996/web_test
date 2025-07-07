@@ -5,8 +5,8 @@
         v-model="projectName" 
         @keyup.enter="loadShots"
         placeholder="프로젝트 이름 입력" />
-        <button @click="loadShots">OK</button>
-        <button @click="clear">Clear</button>
+        <v-btn @click="loadShots">OK</v-btn>
+        <v-btn @click="clear">Clear</v-btn>
     </div>
 
     <div class="table-container">
