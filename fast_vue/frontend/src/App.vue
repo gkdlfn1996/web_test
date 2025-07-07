@@ -1,46 +1,56 @@
 <template>
-  <div id="app">
-    <div class="input-row">
-      <input 
-        v-model="projectName" 
-        @keyup.enter="loadShots"
-        placeholder="프로젝트 이름 입력" />
-        <v-btn @click="loadShots">OK</v-btn>
-        <v-btn @click="clear">Clear</v-btn>
-    </div>
-
-    <div class="table-container">
-      <table v-if="shots.length" class="shots-table">
-        <thead>
-          <tr>
-            <th>Shot</th><th>Task</th><th>Cut In</th><th>Cut Out</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="shot in shots" :key="shot.id">
-            <td>{{ shot.code }}</td>
-            <td>{{ shot.sg_task }}</td>
-            <td>{{ shot.sg_cut_in }}</td>
-            <td>{{ shot.sg_cut_out }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <v-app>
+    <v-main>
+      <div id="app">
+        <div class="input-row">
+          <v-autocomplete
+            v-model="projectName"
+            label="Project"
+            :items="projects"
+            @keyup.enter="loadShots"
+          ></v-autocomplete>
+          <v-btn @click="loadShots">OK</v-btn>
+          <v-btn @click="clear">Clear</v-btn>
+        </div>
+        <div class="table-container">
+          <table v-if="shots.length" class="shots-table">
+            <thead>
+              <tr>
+                <th>Shot</th>
+                <th>Task</th>
+                <th>Cut In</th>
+                <th>Cut Out</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="shot in shots" :key="shot.id">
+                <td>{{ shot.code }}</td>
+                <td>{{ shot.sg_task }}</td>
+                <td>{{ shot.sg_cut_in }}</td>
+                <td>{{ shot.sg_cut_out }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </v-main>
+  </v-app>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
-import { fetchMessage, fetchShots } from './api'
+import { fetchShots, fetchProjects } from './api'
 
 export default {
   setup() {
     const projectName = ref('')
-    const shots       = ref([])
+    const projects = ref([])
+    const shots = ref([])
 
-    onMounted(async () => {
-      // 초기 메시지 로드 (필요 없으면 주석 처리)
-      await fetchMessage()
+  onMounted(
+      async () => {
+        const projData = await fetchProjects()
+        projects.value = projData.projects || []
     })
 
     async function loadShots() {
@@ -53,11 +63,9 @@ export default {
       shots.value = []
     }
 
-    return { projectName, shots, loadShots, clear }
+    return { projectName, projects, shots, loadShots, clear }
   }
 }
 </script>
 
-<style>
-
-</style>
+<style src="./assets/styles.css"></style>

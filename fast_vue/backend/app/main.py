@@ -33,3 +33,11 @@ def project_shots(project_name: str):
         raise HTTPException(status_code=404, detail="Project not found")
     shots = sg_client.get_shots(project.get("id"))
     return {"shots": shots}
+
+@app.get("/api/projects")
+def project_list():
+    """
+    프로젝트 이름 목록을 반환합니다.
+    """
+    projects = sg_client.get_projects()
+    return {"projects": projects}

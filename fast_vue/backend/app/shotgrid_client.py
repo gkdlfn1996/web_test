@@ -26,3 +26,14 @@ class ShotGridClient:
             [["project.Project.id", "is", project_id]],
             ["id", "code", "sg_task", "sg_cut_in", "sg_cut_out"]
         )
+
+    def get_projects(self):
+        """
+        모든 프로젝트의 이름 목록을 조회합니다.
+        """
+        result = self.sg.find(
+            "Project",
+            [],
+            ["name"]
+        )
+        return [p["name"] for p in result]
