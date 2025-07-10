@@ -5,10 +5,11 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+
+
 .v-application {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
+   margin: 0 auto;
+   padding: 20px;
 }
 
 /* 입력 행 스타일 */

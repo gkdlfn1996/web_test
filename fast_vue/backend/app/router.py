@@ -11,6 +11,10 @@ sg_client = ShotGridClient() # 라우터 파일에서 sg_client 초기화
 class EchoRequest(BaseModel):
     text: str
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 @router.post("/api/echo")
 def echo(req: EchoRequest):
     return {"echo": req.text}
@@ -38,6 +42,15 @@ def shot_versions(shot_id: int):
     """
     versions = sg_client.get_versions_for_shot(shot_id)
     return {"versions": versions}
+
+@router.post("/api/auth/login")
+def login(request: LoginRequest):
+    user_info = sg_client.authenticate_human_user(request.username, request.password)
+    if user_info:
+        # 인증 성공 시 사용자 정보 반환 (나중에 JWT 토큰 등으로 대체)
+        return {"message": "Login successful", "user": user_info}
+    else:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @router.get("/db-test")
 async def db_test(db: Session = Depends(get_db)):

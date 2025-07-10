@@ -1,7 +1,40 @@
 <template>
   <v-app>
     <v-main>
-      <v-container>
+      <!-- 로그인 섹션 -->
+      <v-container class="login-section">
+        <v-card class="pa-5" elevation="2" v-if="!loggedInUser">
+          <v-card-title class="text-h5">로그인</v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model="username"
+              label="ShotGrid ID"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="password"
+              label="Password"
+              type="password"
+              @keyup.enter="login"
+              required
+            ></v-text-field>
+            <v-alert
+              v-if="loginError"
+              type="error"
+              dense
+              text
+              class="mb-3"
+            >{{ loginError }}</v-alert>
+            <v-btn color="primary" @click="login">로그인</v-btn>
+          </v-card-text>
+        </v-card>
+        <v-alert v-else type="success" dense text class="mb-5">
+          환영합니다, {{ loggedInUser }}!
+        </v-alert>
+      </v-container>
+
+      <!-- 기존 UI 섹션 (로그인 성공 시 표시) -->
+      <v-container fluid v-if="loggedInUser" :class="{'mt-5': loggedInUser}">
         <div class="d-flex align-center mb-4">
           <v-autocomplete
             v-model="projectName"
@@ -66,6 +99,10 @@ export default {
     const projects = ref([])
     const shots = ref([]) // 선택된 프로젝트의 샷 목록 (autocomplete items)
     const versions = ref([]) // 버전 목록을 저장할 ref 추가
+    const username = ref('') // 로그인 사용자 이름
+    const password = ref('') // 로그인 비밀번호
+    const loggedInUser = ref(null) // 로그인 성공 시 사용자 이름 저장
+    const loginError = ref(null) // 로그인 에러 메시지
     const selectedShotName = ref('') // 선택된 샷 이름
 
     // DB 테스트 관련 변수 추가
@@ -104,6 +141,28 @@ export default {
       shots.value = []
       versions.value = [] // 버전 목록도 초기화
       selectedShotName.value = '' // 선택된 샷 이름도 초기화
+      loggedInUser.value = null; // 로그인 정보 초기화
+      username.value = '';
+      password.value = '';
+      loginError.value = null;
+    }
+
+    // 로그인 메서드 추가
+    async function login() {
+      loginError.value = null; // 에러 메시지 초기화
+      try {
+        const response = await axios.post('http://localhost:8001/api/auth/login', {
+          username: username.value,
+          password: password.value,
+        });
+        if (response.data.user) {
+          loggedInUser.value = response.data.user.name; // 사용자 이름 저장
+        }
+      } catch (error) {
+        console.error('로그인 실패:', error);
+        loginError.value = '아이디 또는 비밀번호를 다시 확인해주세요.';
+        loggedInUser.value = null;
+      }
     }
 
     // DB 연결 테스트 메서드 추가
@@ -124,7 +183,7 @@ export default {
 
     // v-data-table을 위한 헤더 정의
     const versionHeaders = [
-      { title: 'Version Name', key: 'code', sortable: false },
+      { title: 'Version', key: 'code', sortable: false },
       { title: 'Note', key: 'note', sortable: false },
     ];
 
@@ -132,18 +191,24 @@ export default {
       projectName,
       projects,
       shots,
-      selectedShotName, // 반환 객체에 추가
-      versions, // 반환 객체에 추가
-      onProjectSelected, // 반환 객체에 추가
-      loadVersions, // 반환 객체에 추가
+      selectedShotName,
+      username,
+      password,
+      loggedInUser,
+      loginError,
+      versions,
+      onProjectSelected,
+      loadVersions,
       clear,
-      versionHeaders, // 반환 객체에 추가
-      dbTestResult, // 반환 객체에 추가
-      dbTestError,  // 반환 객체에 추가
-      testDbConnection // 반환 객체에 추가
+      versionHeaders,
+      dbTestResult,
+      dbTestError, 
+      testDbConnection,
+      login
     }
   }
 }
+    
 </script>
 
 <style src="./assets/styles.css"></style>
