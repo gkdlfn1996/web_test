@@ -33,7 +33,19 @@ class ShotGridClient:
         """
         result = self.sg.find(
             "Project",
-            [],
+            [["archived", "is", False],
+             ["sg_restricted_user", "is", False],
+             ["is_template", "is", False]], 
             ["name"]
         )
         return [p["name"] for p in result]
+
+    def get_versions_for_shot(self, shot_id: int):
+        """
+        특정 Shot에 연결된 Version 목록을 조회합니다.
+        """
+        return self.sg.find(
+            "Version",
+            [["entity", "is", {"type": "Shot", "id": shot_id}]], # Shot 엔티티에 연결된 버전 필터링
+            ["id", "code", "sg_status_list"] # 필요한 필드 추가
+        )

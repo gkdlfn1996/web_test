@@ -31,6 +31,14 @@ def project_list():
     projects = sg_client.get_projects()
     return {"projects": projects}
 
+@router.get("/api/shot/{shot_id}/versions")
+def shot_versions(shot_id: int):
+    """
+    특정 Shot의 버전 목록을 반환합니다.
+    """
+    versions = sg_client.get_versions_for_shot(shot_id)
+    return {"versions": versions}
+
 @router.get("/db-test")
 async def db_test(db: Session = Depends(get_db)):
     try:
