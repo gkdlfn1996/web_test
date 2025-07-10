@@ -1,10 +1,20 @@
-from fastapi import FastAPI
+import os
+from dotenv import load_dotenv
+from fastapi import FastAPI # FastAPI 임포트
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from .shotgrid_client import ShotGridClient
+from . import models  # models.py 임포트 (models.Base.metadata.create_all 사용)
+from contextlib import asynccontextmanager # asynccontextmanager 임포트
+from . import router # router.py 임포트
 
-app = FastAPI()
-sg_client = ShotGridClient()
+
+# Lifespan 이벤트 핸들러 정의
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from .database import engine # database.py에서 engine 임포트
+    models.Base.metadata.create_all(bind=engine) # 데이터베이스 테이블 생성
+    yield
+
+app = FastAPI(lifespan=lifespan) # lifespan 인자 전달
 
 # CORS 설정: 프론트엔드( localhost:8080 )에서 호출 허용
 app.add_middleware(
@@ -14,30 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/api/message")
-def read_message():
-    return {"message": "Hello from FastAPI!!!!"}
-
-class EchoRequest(BaseModel):
-    text: str
-
-@app.post("/api/echo")
-def echo(req: EchoRequest):
-    return {"echo": req.text}
+# 라우터 포함
+app.include_router(router.router) # 라우터 포함
 
 
-@app.get("/api/project/{project_name}/shots")
-def project_shots(project_name: str):
-    project = sg_client.get_project_by_name(project_name)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    shots = sg_client.get_shots(project.get("id"))
-    return {"shots": shots}
-
-@app.get("/api/projects")
-def project_list():
-    """
-    프로젝트 이름 목록을 반환합니다.
-    """
-    projects = sg_client.get_projects()
-    return {"projects": projects}
