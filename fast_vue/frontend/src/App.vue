@@ -124,8 +124,13 @@ export default {
       onProjectSelected: shotGridData.onProjectSelected,
 
       // useNotes에서 노출된 속성/함수
-      notesContent: notes.notesContent,
-      saveNote: notes.saveNote,
+      notesContent: notes.notesContent, // notesContent ref 자체를 전달
+      saveNote: async (versionId, content) => { // saveNote 함수를 App.vue에서 래핑
+        const savedContent = await notes.saveNote(versionId, content);
+        if (savedContent !== null) { // 저장 성공 시에만 업데이트
+          notes.notesContent.value[versionId] = savedContent;
+        }
+      },
 
       // App.vue에서 직접 관리하는 속성/함수
       loadVersions,

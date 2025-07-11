@@ -20,7 +20,7 @@ class NoteBase(BaseModel):
     content: str
 
 class NoteCreate(NoteBase):
-    version_id: str # ShotGrid 버전 ID
+    version_id: int # ShotGrid 버전 ID
     owner_id: int # 사용자 ID (우리 DB의 users.id)
 
 class NoteUpdate(BaseModel):
@@ -57,11 +57,20 @@ def shot_versions(shot_id: int):
 #---------------------------------------- Login -----------------------------------------------
 
 @router.post("/api/auth/login")
-def login(request: LoginRequest):
+def login(request: LoginRequest, db: Session = Depends(get_db)):
     user_info = sg_client.authenticate_human_user(request.username, request.password)
     if user_info:
-        # 인증 성공 시 사용자 정보 반환 (나중에 JWT 토큰 등으로 대체)
-        return {"message": "Login successful", "user": user_info}
+        from . import models # models.py 임포트 (함수 내에서 필요시)
+
+        # 로컬 DB에 사용자 정보 저장 또는 조회
+        user = db.query(models.User).filter(models.User.username == user_info["login"]).first()
+        if not user:
+            # 사용자가 없으면 새로 생성
+            user = models.User(username=user_info["login"])
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return {"message": "Login successful", "user": {"id": user.id, "name": user_info["name"]}}
     else:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -94,7 +103,7 @@ def create_or_update_note(
         return {"message": "Note created successfully", "note": new_note}
 
 @router.get("/api/notes/{version_id}/{owner_id}")
-def get_note(version_id: int, owner_id: int, db: Session = Depends(get_db)):
+def get_note(version_id: str, owner_id: int, db: Session = Depends(get_db)):
     from . import models # models.py 임포트
 
     note = db.query(models.Note).filter(

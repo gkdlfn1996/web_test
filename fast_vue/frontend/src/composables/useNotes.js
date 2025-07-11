@@ -45,8 +45,10 @@ export default function useNotes(loggedInUserIdRef) { // loggedInUserId를 ref�
         content: content,
       });
       console.log(`Note for version ${versionId} saved successfully.`);
+      return content; // 저장 성공 후 업데이트된 내용 반환
     } catch (error) {
       console.error(`Note for version ${versionId} save failed:`, error);
+      return null; // 실패 시 null 반환
     }
   };
 
