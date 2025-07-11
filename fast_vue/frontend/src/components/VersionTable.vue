@@ -67,9 +67,10 @@ watch(() => props.notes, (newNotes) => {
 </script>
 
 <style scoped>
-.saving-note {
+/* v-textarea 컴포넌트에 saving-note 클래스가 있을 때, 내부의 v-field__field에 스타일 적용 */
+::v-deep .v-textarea.saving-note .v-field__field {
   transition: background-color 0.5s ease-in-out; /* 트랜지션 시간 증가 */
-  background-color: #ffeb3b; /* 더 눈에 띄는 노란색 배경 */
+  background-color: #E0F2F7; /* 연한 파란색 배경 */
 }
 /* 저장 완료 후 원래 색상으로 돌아오도록 CSS 트랜지션 추가 */
 /* 필요한 스타일이 있다면 여기에 추가 */
