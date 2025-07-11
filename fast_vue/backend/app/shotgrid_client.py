@@ -67,13 +67,13 @@ class ShotGridClient:
             print(f"ShotGrid 사용자 인증 실패: {login} - {e}")
             return None
         
-# if __name__ == "__main__":
-#     # 테스트를 위한 사용자 이름과 비밀번호를 여기에 입력하세요.
-#     # 실제 ShotGrid 계정 정보를 사용해야 합니다.
-#     test_username = "ideatd"
-#     test_password = "fnxmdkagh1!"
+if __name__ == "__main__":
+    # 테스트를 위한 사용자 이름과 비밀번호를 여기에 입력하세요.
+    # 실제 ShotGrid 계정 정보를 사용해야 합니다.
+    test_username = "d10583"
+    test_password = "rlatpdus123@"
 
-#     client = ShotGridClient()
-#     print(f"ShotGrid 사용자 '{test_username}' 인증 시도...")
-#     user_data = client.authenticate_human_user(test_username, test_password)
-#     print(f"인증 결과: {user_data}")
+    client = ShotGridClient()
+    print(f"ShotGrid 사용자 '{test_username}' 인증 시도...")
+    user_data = client.authenticate_human_user(test_username, test_password)
+    print(f"인증 결과: {user_data}")

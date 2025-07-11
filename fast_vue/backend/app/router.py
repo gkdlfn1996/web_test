@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from pydantic import BaseModel # EchoRequest를 위해 추가
+from typing import Optional
 from .database import get_db # 상위 폴더의 database.py에서 get_db 임포트
 from .shotgrid_client import ShotGridClient # sg_client 사용을 위해 추가
 
@@ -14,6 +15,16 @@ class EchoRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+class NoteBase(BaseModel):
+    content: str
+
+class NoteCreate(NoteBase):
+    version_id: str # ShotGrid 버전 ID
+    owner_id: int # 사용자 ID (우리 DB의 users.id)
+
+class NoteUpdate(BaseModel):
+    content: str # 업데이트할 내용
 
 @router.post("/api/echo")
 def echo(req: EchoRequest):
@@ -43,6 +54,8 @@ def shot_versions(shot_id: int):
     versions = sg_client.get_versions_for_shot(shot_id)
     return {"versions": versions}
 
+#---------------------------------------- Login -----------------------------------------------
+
 @router.post("/api/auth/login")
 def login(request: LoginRequest):
     user_info = sg_client.authenticate_human_user(request.username, request.password)
@@ -51,6 +64,48 @@ def login(request: LoginRequest):
         return {"message": "Login successful", "user": user_info}
     else:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+@router.post("/api/notes")
+def create_or_update_note(
+    note_data: NoteCreate, # 노트 생성/업데이트 데이터
+    db: Session = Depends(get_db)
+):
+    from . import models # models.py 임포트
+
+    # 기존 노트가 있는지 확인 (version_id와 owner_id로)
+    existing_note = db.query(models.Note).filter(
+        models.Note.version_id == note_data.version_id,
+        models.Note.owner_id == note_data.owner_id
+    ).first()
+
+    if existing_note:
+        # 노트가 존재하면 업데이트
+        existing_note.content = note_data.content
+        db.add(existing_note)
+        db.commit()
+        db.refresh(existing_note)
+        return {"message": "Note updated successfully", "note": existing_note}
+    else:
+        # 노트가 없으면 새로 생성
+        new_note = models.Note(**note_data.dict())
+        db.add(new_note)
+        db.commit()
+        db.refresh(new_note)
+        return {"message": "Note created successfully", "note": new_note}
+
+@router.get("/api/notes/{version_id}/{owner_id}")
+def get_note(version_id: int, owner_id: int, db: Session = Depends(get_db)):
+    from . import models # models.py 임포트
+
+    note = db.query(models.Note).filter(
+        models.Note.version_id == version_id,
+        models.Note.owner_id == owner_id
+    ).first()
+    if note:
+        return {"note": note}
+    raise HTTPException(status_code=404, detail="Note not found")
+
+# ---------------------------------------- TEST -----------------------------------------------
 
 @router.get("/db-test")
 async def db_test(db: Session = Depends(get_db)):

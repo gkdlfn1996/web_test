@@ -16,7 +16,7 @@ class Note(Base):
     __tablename__ = "notes"
 
     id = Column(Integer, primary_key=True, index=True)
-    version_id = Column(String, index=True) # ShotGrid 버전 ID (예: sg_version_id)
+    version_id = Column(Integer, index=True) # ShotGrid 버전 ID (예: sg_version_id)
     owner_id = Column(Integer, ForeignKey("users.id"))
     content = Column(Text)
     created_at = Column(DateTime, default=func.now())
