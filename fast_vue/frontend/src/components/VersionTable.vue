@@ -17,9 +17,11 @@
             <v-textarea
               label="여기에 노트를 작성하세요"
               rows="3"
-              :model-value="notes[item.id]"
-              @update:modelValue="updateNote(item.id, $event)"
+              v-model="localNotesContent[item.id]"
+              @input="emit('input-note', item.id, localNotesContent[item.id])"
+              @blur="emit('save-note', item.id, localNotesContent[item.id])"
               variant="outlined"
+              :class="{ 'saving-note': !!isSaving[item.id] }"
             ></v-textarea>
           </div>
           <div class="other-notes">
@@ -33,25 +35,42 @@
 </template>
 
 <script setup>
-
+import { ref, watch } from 'vue';
 
 const props = defineProps({
   versions: Array,
-  notes: Object, // notesContent 객체
+  notes: Object, // notesContent 객체 (초기값 및 외부 업데이트용)
+  notesComposable: Object, // notes composable 전체를 받음
+  isSaving: Object, // isSaving prop 타입을 Object로 변경
 });
 
-const emit = defineEmits(['save-note']);
+const emit = defineEmits(['save-note', 'input-note']); // emit 이벤트 추가
 
 const versionHeaders = [
   { title: 'Version', key: 'code', sortable: false },
   { title: 'Note', key: 'note', sortable: false },
 ];
 
-const updateNote = (versionId, content) => {
-  emit('save-note', versionId, content);
-};
+// 로컬 노트 내용을 저장할 반응형 객체
+const localNotesContent = ref({});
+
+// props.notes가 변경될 때 localNotesContent를 초기화
+watch(() => props.notes, (newNotes) => {
+  localNotesContent.value = { ...newNotes };
+}, { immediate: true, deep: true });
+
+
+
+
+
+
 </script>
 
 <style scoped>
+.saving-note {
+  transition: background-color 0.5s ease-in-out; /* 트랜지션 시간 증가 */
+  background-color: #ffeb3b; /* 더 눈에 띄는 노란색 배경 */
+}
+/* 저장 완료 후 원래 색상으로 돌아오도록 CSS 트랜지션 추가 */
 /* 필요한 스타일이 있다면 여기에 추가 */
 </style>

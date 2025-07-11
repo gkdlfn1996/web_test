@@ -35,7 +35,10 @@
         <VersionTable
           :versions="versions"
           :notes="notesContent"
-          @save-note="saveNote"
+          :notesComposable="notes"
+          :isSaving="isSaving"
+          @save-note="handleSaveNote"
+          @input-note="handleInputNote"
         />
       </v-container>
     </v-main>
@@ -43,7 +46,7 @@
 </template>
 
 <script>
-import { onMounted } from 'vue'; // onMounted는 App.vue에서 직접 사용
+import { onMounted, computed, watch } from 'vue'; // onMounted는 App.vue에서 직접 사용
 import useAuth from './composables/useAuth'; // 인증 로직
 import useShotGridData from './composables/useShotGridData'; // ShotGrid 데이터 로직
 import useNotes from './composables/useNotes'; // 노트 로직
@@ -64,6 +67,31 @@ export default {
     const auth = useAuth();
     const shotGridData = useShotGridData();
     const notes = useNotes(auth.loggedInUserId);
+
+    // Create local computed property for isSaving
+    
+
+    // Watch for changes in notes.isSaving.value for debugging
+    watch(() => notes.isSaving.value, (newValue) => {
+      console.log('isSaving changed:', newValue);
+    });
+
+    // Create local wrapper functions for notes composable methods
+    const handleSaveNote = async (versionId, content) => {
+      // 진행중인 디바운스 저장이 있다면 취소
+      notes.debouncedSave.cancel();
+      // UI에 즉시 반영 (한글 입력 문제 해결을 위해)
+      notes.notesContent.value[versionId] = content;
+      await notes.saveImmediately(versionId, content);
+    };
+
+    const handleInputNote = (versionId, content) => {
+      // UI에 즉시 반영
+      notes.notesContent.value[versionId] = content;
+      notes.debouncedSave(versionId, content);
+    };
+
+    
 
     // App.vue의 onMounted 로직
     onMounted(async () => {
@@ -125,16 +153,14 @@ export default {
 
       // useNotes에서 노출된 속성/함수
       notesContent: notes.notesContent, // notesContent ref 자체를 전달
-      saveNote: async (versionId, content) => { // saveNote 함수를 App.vue에서 래핑
-        const savedContent = await notes.saveNote(versionId, content);
-        if (savedContent !== null) { // 저장 성공 시에만 업데이트
-          notes.notesContent.value[versionId] = savedContent;
-        }
-      },
+      notes: notes, // VersionTable에 notes composable 전체를 전달하기 위해 필요
+      isSaving: notes.isSaving, // useNotes의 isSaving을 직접 노출
 
       // App.vue에서 직접 관리하는 속성/함수
       loadVersions,
       clear,
+      handleSaveNote,
+      handleInputNote,
     };
   },
 };
