@@ -21,7 +21,15 @@
               label="여기에 노트를 작성하세요"
               rows="3"
               v-model="localNotesContent[item.id]"
-              @input="emit('input-note', item.id, localNotesContent[item.id])"
+              @input="
+                emit('input-note', item.id, localNotesContent[item.id]);
+                sendMessage({
+                  type: 'note_update',
+                  payload: {
+                    version_id: item.id,
+                    content: localNotesContent[item.id],
+                  },
+                });"
               @blur="emit('save-note', item.id, localNotesContent[item.id])"
               variant="outlined"
               :class="{ 'saving-note': !!isSaving[item.id] }"
@@ -30,7 +38,11 @@
           <div class="other-notes mt-4">
             <div class="d-flex align-center mb-2">
             <h3>Others Draft Notes</h3>
-            <v-btn icon="mdi-refresh" size="small" variant="text" @click="emit('reload-other-notes', item.id)"></v-btn>
+            <v-btn
+              icon="mdi-refresh"
+              size="small"
+              variant="text"
+              :color="notesComposable.hasNewOtherNotes.value[item.id] ? 'red' : ''" @click="emit('reload-other-notes', item.id)"></v-btn>
             </div>
             <v-card variant="outlined" class="notes-container">
               <template v-if="notesComposable.otherNotes.value[item.id] && notesComposable.otherNotes.value[item.id].length">
@@ -64,6 +76,7 @@ const props = defineProps({
   notes: Object, // notesContent 객체 (초기값 및 외부 업데이트용)
   notesComposable: Object, // notes composable 전체를 받음
   isSaving: Object, // isSaving prop 타입을 Object로 변경
+  sendMessage: Function, // 웹소켓 메시지 전송 함수
 });
 
 const emit = defineEmits(['save-note', 'input-note', 'refresh-versions', 'reload-other-notes']); // emit 이벤트 추가

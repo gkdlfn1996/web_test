@@ -41,6 +41,7 @@
           @input-note="handleInputNote"
           @refresh-versions="loadVersions"
           @reload-other-notes="notes.reloadOtherNotesForVersion"
+          :sendMessage="sendMessage"
         />
       </v-container>
     </v-main>
@@ -53,6 +54,8 @@ import useAuth from './composables/useAuth'; // 인증 로직
 import useShotGridData from './composables/useShotGridData'; // ShotGrid 데이터 로직
 import useNotes from './composables/useNotes'; // 노트 로직
 import { fetchVersionsForShot } from './api'; // API 호출 함수
+
+import useWebSocket from './composables/useWebSocket'; // 웹소켓 로직
 
 import LoginSection from './components/LoginSection.vue'; // 로그인 컴포넌트
 import ShotSelector from './components/ShotSelector.vue'; // 샷 선택 컴포넌트
@@ -69,6 +72,7 @@ export default {
     const auth = useAuth();
     const shotGridData = useShotGridData();
     const notes = useNotes(auth.loggedInUserId);
+    const { connectWebSocket, sendMessage, disconnectWebSocket, receivedMessage } = useWebSocket();
 
     // Create local computed property for isSaving
     
@@ -92,6 +96,17 @@ export default {
       notes.notesContent.value[versionId] = content;
       notes.debouncedSave(versionId, content);
     };
+
+    // 웹소켓 메시지 수신 감지 및 otherNotes 업데이트
+    watch(receivedMessage, (newMessage) => {
+      if (newMessage && newMessage.type === 'note_update') {
+        const { version_id, owner_id, content, updated_at, owner_username } = newMessage.payload;
+        // 현재 사용자의 노트가 아닌 경우에만 업데이트
+        if (owner_id !== auth.loggedInUserId.value) {
+          notes.setNewOtherNotesFlag(version_id, true); // 새로운 노트 알림 플래그 설정
+        }
+      }
+    });
 
     // LoginSection에서 발생한 'login' 이벤트를 처리하는 함수
     const handleLoginEvent = async () => {
@@ -122,6 +137,10 @@ export default {
         // useNotes의 loadVersionNotes 함수를 호출하여 노트 데이터 로딩
         await notes.loadVersionNotes(loadedVersions);
 
+        // 웹소켓 연결 (선택된 샷의 모든 버전에 대해 연결)
+        // 각 버전별로 웹소켓 연결을 맺는 대신, 현재는 하나의 샷에 대한 모든 버전을 관리하는 방식으로 진행
+        // 실제로는 각 버전별로 웹소켓 연결을 맺거나, 서버에서 특정 샷의 모든 버전을 브로드캐스트하는 방식 고려
+        connectWebSocket(selectedShot.id, auth.loggedInUserId.value); // 샷 ID를 version_id로 사용
         // 모든 데이터가 준비되면 버전 목록 업데이트 (UI 렌더링 유발)
         shotGridData.setVersions(loadedVersions);
 
@@ -140,6 +159,7 @@ export default {
       auth.loginError.value = null;
       notes.notesContent.value = {}; // 노트 내용도 초기화
     };
+    disconnectWebSocket(); // Clear 시 웹소켓 연결 해제
 
     return {
       // useAuth에서 노출된 속성/함수
@@ -167,6 +187,7 @@ export default {
       clear,
       handleSaveNote,
       handleInputNote,
+      sendMessage, // VersionTable로 전달
       handleLoginEvent, // 새로 추가한 로그인 이벤트 핸들러 노출
     };
   },
