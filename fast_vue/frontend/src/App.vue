@@ -39,6 +39,7 @@
           :isSaving="isSaving"
           @save-note="handleSaveNote"
           @input-note="handleInputNote"
+          @refresh-versions="loadVersions"
         />
       </v-container>
     </v-main>

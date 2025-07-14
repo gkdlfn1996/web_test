@@ -1,7 +1,10 @@
 <!-- frontend/src/components/VersionTable.vue -->
 <template>
   <div class="versions-section" v-if="versions.length">
-    <h2>Version</h2>
+    <div class="d-flex align-center mb-2">
+      <h2 class="mr-2">Version</h2>
+      <v-btn icon="mdi-refresh" size="small" variant="text" @click="emit('refresh-versions')"></v-btn>
+    </div>
     <v-data-table
       :headers="versionHeaders"
       :items="versions"
@@ -60,7 +63,7 @@ const props = defineProps({
   isSaving: Object, // isSaving prop 타입을 Object로 변경
 });
 
-const emit = defineEmits(['save-note', 'input-note']); // emit 이벤트 추가
+const emit = defineEmits(['save-note', 'input-note', 'refresh-versions']); // emit 이벤트 추가
 
 const versionHeaders = [
   { title: 'Version', key: 'code', sortable: false },
