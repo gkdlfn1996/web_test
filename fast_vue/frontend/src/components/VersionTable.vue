@@ -26,7 +26,23 @@
           </div>
           <div class="other-notes">
             <h3>Others Draft Notes</h3>
-            <p>다른 사람의 노트 내용이 여기에 실시간으로 표시됩니다.</p>
+            <v-card variant="outlined" class="notes-container">
+              <template v-if="notesComposable.otherNotes.value[item.id] && notesComposable.otherNotes.value[item.id].length">
+                <div v-for="(note, index) in notesComposable.otherNotes.value[item.id]" :key="note.id">
+                  <div class="d-flex justify-space-between align-center px-2 pb-1">
+                    <span class="text-subtitle-2 text-grey-darken-1">{{ note.owner.username }}</span>
+                    <span class="text-caption text-right text-grey-darken-1">{{ formatDateTime(note.updated_at) }}</span>
+                  </div>
+                  <v-card-text class="note-content text-body-2 pa-2">
+                    {{ note.content }}
+                  </v-card-text>
+                  <v-divider v-if="index < notesComposable.otherNotes.value[item.id].length - 1"></v-divider>
+                </div>
+              </template>
+              <v-card-text v-else>
+                다른 사용자의 노트가 없습니다.
+              </v-card-text>
+            </v-card>
           </div>
         </div>
       </template>
@@ -59,10 +75,21 @@ watch(() => props.notes, (newNotes) => {
   localNotesContent.value = { ...newNotes };
 }, { immediate: true, deep: true });
 
-
-
-
-
+// 날짜 포맷팅 함수
+const formatDateTime = (isoString) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  // ko-KR 로케일을 사용하여 'YYYY. MM. DD. HH:mm:ss' 형식으로 변환
+  return date.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\.\s/g, '.').slice(0, -1); // 마지막 '.' 제거
+};
 
 </script>
 
@@ -73,5 +100,16 @@ watch(() => props.notes, (newNotes) => {
   background-color: #E0F2F7; /* 연한 파란색 배경 */
 }
 /* 저장 완료 후 원래 색상으로 돌아오도록 CSS 트랜지션 추가 */
-/* 필요한 스타일이 있다면 여기에 추가 */
+
+.notes-container {
+  height: 115px; /* v-textarea의 높이와 유사하게 설정 */
+  overflow-y: auto; /* 내용이 많아지면 스크롤바 표시 */
+}
+
+.note-content {
+  white-space: pre-wrap; /* 줄바꿈 및 공백 유지 */
+  word-wrap: break-word; /* 긴 단어가 영역을 벗어나지 않도록 줄바꿈 */
+  line-height: 1.4;
+}
+
 </style>

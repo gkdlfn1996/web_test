@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from datetime import datetime
 from pydantic import BaseModel # EchoRequest를 위해 추가
 from typing import Optional
 from .database import get_db # 상위 폴더의 database.py에서 get_db 임포트
@@ -26,6 +27,23 @@ class NoteCreate(NoteBase):
 class NoteUpdate(BaseModel):
     content: str # 업데이트할 내용
 
+# 다른 사용자 노트를 반환하기 위한 Pydantic 모델
+class UserInfo(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        orm_mode = True
+
+class NoteInfo(BaseModel):
+    id: int
+    content: str
+    updated_at: datetime
+    owner: UserInfo
+
+    class Config:
+        orm_mode = True
+
 @router.post("/api/echo")
 def echo(req: EchoRequest):
     return {"echo": req.text}
@@ -49,7 +67,7 @@ def project_list():
 @router.get("/api/shot/{shot_id}/versions")
 def shot_versions(shot_id: int):
     """
-    특정 Shot의 버전 목록을 반환합니다.
+    특정 Shot의 버전 목록을 반환합니다。
     """
     versions = sg_client.get_versions_for_shot(shot_id)
     return {"versions": versions}
@@ -58,20 +76,28 @@ def shot_versions(shot_id: int):
 
 @router.post("/api/auth/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
+    print(f"Login attempt for username: {request.username}")
+    print("Calling ShotGrid authentication...")
     user_info = sg_client.authenticate_human_user(request.username, request.password)
+    print(f"ShotGrid authentication result: {user_info}")
     if user_info:
+        print(f"User '{user_info['login']}' authenticated with ShotGrid. Checking local DB...")
         from . import models # models.py 임포트 (함수 내에서 필요시)
 
         # 로컬 DB에 사용자 정보 저장 또는 조회
         user = db.query(models.User).filter(models.User.username == user_info["login"]).first()
+        print(f"Local DB user query result: {user}")
         if not user:
             # 사용자가 없으면 새로 생성
+            print(f"User '{user_info['login']}' not found in local DB. Creating new user...")
             user = models.User(username=user_info["login"])
             db.add(user)
             db.commit()
             db.refresh(user)
+            print(f"New user created with ID: {user.id}")
         return {"message": "Login successful", "user": {"id": user.id, "name": user_info["name"]}}
     else:
+        print("ShotGrid authentication failed. Returning 401.")
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @router.post("/api/notes")
@@ -113,6 +139,18 @@ def get_note(version_id: int, owner_id: int, db: Session = Depends(get_db)):
     if note:
         return {"note": note}
     raise HTTPException(status_code=404, detail="Note not found")
+
+@router.get("/api/notes/{version_id}", response_model=list[NoteInfo])
+def get_notes_for_version(version_id: int, db: Session = Depends(get_db)):
+    """특정 버전에 달린 모든 노트를 작성자 정보와 함께 반환합니다."""
+    from . import models # models.py 임포트
+
+    notes = db.query(models.Note).filter(models.Note.version_id == version_id).all()
+    if not notes:
+        return [] # 노트가 없으면 빈 리스트 반환
+
+    # response_model에 맞게 데이터 구조를 변환하여 반환
+    return notes
 
 # ---------------------------------------- TEST -----------------------------------------------
 

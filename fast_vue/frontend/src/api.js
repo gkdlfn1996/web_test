@@ -28,3 +28,8 @@ export async function fetchNoteForVersionAndUser(versionId, ownerId) {
         return { note: null }; // 네트워크 에러 등 예외 발생 시
     }
 }
+
+export async function fetchAllNotesForVersion(versionId) {
+    const res = await fetch(`${process.env.VUE_APP_API_BASE_URL}/api/notes/${versionId}`);
+    return res.json();
+}

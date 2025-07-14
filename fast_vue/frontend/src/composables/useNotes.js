@@ -1,7 +1,7 @@
 // frontend/src/composables/useNotes.js
 import { ref } from 'vue';
 import axios from 'axios';
-import { fetchNoteForVersionAndUser } from '../api'; // api.js에서 함수 임포트
+import { fetchNoteForVersionAndUser, fetchAllNotesForVersion } from '../api'; // fetchAllNotesForVersion 추가
 
 // Simple debounce utility function
 function debounce(func, delay) {
@@ -19,6 +19,7 @@ function debounce(func, delay) {
 
 export default function useNotes(loggedInUserIdRef) { // loggedInUserId를 ref로 받음
   const notesContent = ref({}); // 각 버전별 노트 내용을 저장할 객체
+  const otherNotes = ref({}); // 다른 사용자들의 노트를 저장할 객체
   const isSaving = ref({}); // 저장 상태를 버전 ID별로 관리하는 객체로 초기화
 
   // 모든 버전에 대한 노트 내용을 불러오는 함수
@@ -29,19 +30,35 @@ export default function useNotes(loggedInUserIdRef) { // loggedInUserId를 ref�
     }
 
     try {
-      // 모든 버전에 대한 노트 정보를 병렬로 가져옵니다.
-      const notePromises = versionsToLoad.map(version =>
+      // 1. 현재 사용자의 노트를 병렬로 가져옵니다.
+      const myNotePromises = versionsToLoad.map(version =>
         fetchNoteForVersionAndUser(version.id, loggedInUserIdRef.value)
       );
-      const noteResults = await Promise.all(notePromises);
+      const myNoteResults = await Promise.all(myNotePromises);
 
-      // 가져온 노트 정보로 notesContent 객체를 만듭니다. 그 전에 notesContent를 초기화
+      // 2. 모든 사용자의 노트를 병렬로 가져옵니다.
+      const allNotesPromises = versionsToLoad.map(version =>
+        fetchAllNotesForVersion(version.id)
+      );
+      const allNotesResults = await Promise.all(allNotesPromises);
+
+      // 가져온 노트 정보로 notesContent와 otherNotes 객체를 만듭니다.
       const newNotesContent = {};
-      noteResults.forEach((result, index) => {
+      const newOtherNotes = {};
+
+      myNoteResults.forEach((result, index) => {
         const versionId = versionsToLoad[index].id;
         newNotesContent[versionId] = result.note ? result.note.content : '';
       });
+
+      allNotesResults.forEach((notes, index) => {
+        const versionId = versionsToLoad[index].id;
+        // 다른 사용자들의 노트만 필터링
+        newOtherNotes[versionId] = notes.filter(note => note.owner.id !== loggedInUserIdRef.value);
+      });
+
       notesContent.value = newNotesContent; // 반응성을 위해 객체 자체를 교체
+      otherNotes.value = newOtherNotes;
     } catch (error) {
       console.error('노트 불러오기 실패:', error);
     }
@@ -91,6 +108,7 @@ export default function useNotes(loggedInUserIdRef) { // loggedInUserId를 ref�
 
   return {
     notesContent,
+    otherNotes, // 다른 사용자 노트 데이터 노출
     loadVersionNotes,
     debouncedSave, // 외부에는 디바운싱된 함수를 노출
     saveImmediately, // 즉시 저장 함수 노출
