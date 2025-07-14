@@ -45,6 +45,7 @@ const props = defineProps({
 const emit = defineEmits(['update:username', 'update:password', 'login']);
 
 const handleLogin = () => {
+  console.log('Login button clicked in LoginSection.vue');
   emit('login');
 };
 </script>

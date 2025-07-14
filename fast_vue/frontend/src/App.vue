@@ -9,7 +9,7 @@
         :loginError="loginError"
         @update:username="username = $event"
         @update:password="password = $event"
-        @login="login"
+        @login="handleLoginEvent"
       />
 
       <!-- 로그인 성공 시 표시되는 메인 UI -->
@@ -91,7 +91,11 @@ export default {
       notes.debouncedSave(versionId, content);
     };
 
-    
+    // LoginSection에서 발생한 'login' 이벤트를 처리하는 함수
+    const handleLoginEvent = async () => {
+      console.log('handleLoginEvent triggered in App.vue');
+      await auth.login();
+    };
 
     // App.vue의 onMounted 로직
     onMounted(async () => {
@@ -120,7 +124,7 @@ export default {
         shotGridData.setVersions(loadedVersions);
 
       } catch (error) {
-        console.error("Error loading versions and notes:", error);
+        console.error("Error in loadVersions:", error);
         // 사용자에게 에러를 알리는 로직을 추가할 수 있습니다.
       }
     };
@@ -161,6 +165,7 @@ export default {
       clear,
       handleSaveNote,
       handleInputNote,
+      handleLoginEvent, // 새로 추가한 로그인 이벤트 핸들러 노출
     };
   },
 };

@@ -103,7 +103,7 @@ def create_or_update_note(
         return {"message": "Note created successfully", "note": new_note}
 
 @router.get("/api/notes/{version_id}/{owner_id}")
-def get_note(version_id: str, owner_id: int, db: Session = Depends(get_db)):
+def get_note(version_id: int, owner_id: int, db: Session = Depends(get_db)):
     from . import models # models.py 임포트
 
     note = db.query(models.Note).filter(

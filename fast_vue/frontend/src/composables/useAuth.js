@@ -11,8 +11,9 @@ export default function useAuth() {
 
   const login = async () => {
     loginError.value = null;
+    console.log(`Attempting login for user: ${username.value}`);
     try {
-      const response = await axios.post('http://localhost:8001/api/auth/login', {
+      const response = await axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/auth/login`, { // 환경 변수 사용
         username: username.value,
         password: password.value,
       });

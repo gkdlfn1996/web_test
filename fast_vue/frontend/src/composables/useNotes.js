@@ -58,7 +58,7 @@ export default function useNotes(loggedInUserIdRef) { // loggedInUserId를 ref�
     const startTime = Date.now();
 
     try {
-      await axios.post('http://localhost:8001/api/notes', {
+      await axios.post(`${process.env.VUE_APP_API_BASE_URL}/api/notes`, { // 환경 변수 사용
         version_id: versionId,
         owner_id: loggedInUserIdRef.value,
         content: content,
