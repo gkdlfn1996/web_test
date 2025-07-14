@@ -27,8 +27,11 @@
               :class="{ 'saving-note': !!isSaving[item.id] }"
             ></v-textarea>
           </div>
-          <div class="other-notes">
+          <div class="other-notes mt-4">
+            <div class="d-flex align-center mb-2">
             <h3>Others Draft Notes</h3>
+            <v-btn icon="mdi-refresh" size="small" variant="text" @click="emit('reload-other-notes', item.id)"></v-btn>
+            </div>
             <v-card variant="outlined" class="notes-container">
               <template v-if="notesComposable.otherNotes.value[item.id] && notesComposable.otherNotes.value[item.id].length">
                 <div v-for="(note, index) in notesComposable.otherNotes.value[item.id]" :key="note.id">
@@ -63,7 +66,7 @@ const props = defineProps({
   isSaving: Object, // isSaving prop 타입을 Object로 변경
 });
 
-const emit = defineEmits(['save-note', 'input-note', 'refresh-versions']); // emit 이벤트 추가
+const emit = defineEmits(['save-note', 'input-note', 'refresh-versions', 'reload-other-notes']); // emit 이벤트 추가
 
 const versionHeaders = [
   { title: 'Version', key: 'code', sortable: false },

@@ -40,6 +40,7 @@
           @save-note="handleSaveNote"
           @input-note="handleInputNote"
           @refresh-versions="loadVersions"
+          @reload-other-notes="notes.reloadOtherNotesForVersion"
         />
       </v-container>
     </v-main>
