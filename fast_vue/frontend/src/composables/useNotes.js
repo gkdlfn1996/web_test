@@ -112,6 +112,9 @@ export default function useNotes(loggedInUserIdRef) { // loggedInUserId를 ref�
       // 다른 사용자들의 노트만 필터링하여 업데이트
       otherNotes.value[versionId] = notes.filter(note => note.owner.id !== loggedInUserIdRef.value);
       console.log(`Other notes for version ${versionId} reloaded successfully.`);
+      // 새로고침 버튼을 눌렀으므로, 새로운 노트 알림 플래그를 false로 설정
+      hasNewOtherNotes.value[versionId] = false;
+      console.log(`hasNewOtherNotes for version ${versionId} set to false after reload.`);
     } catch (error) {
       console.error(`Failed to reload other notes for version ${versionId}:`, error);
     }
@@ -120,6 +123,7 @@ export default function useNotes(loggedInUserIdRef) { // loggedInUserId를 ref�
   // 특정 버전의 새로운 다른 노트 알림 플래그를 설정하는 함수
   const setNewOtherNotesFlag = (versionId, value) => {
     hasNewOtherNotes.value[versionId] = value;
+    console.log(`hasNewOtherNotes for version ${versionId} set to ${value}.`);
   };
 
   // 디바운싱된 노트 저장 함수 (입력 중 사용)
